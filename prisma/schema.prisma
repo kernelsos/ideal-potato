@@ -30,6 +30,8 @@ model Stream {
   user            User        @relation(fields: [userId],references: [id])
   url             String
   title           String?
+  smallImg        String      @default("")
+  bigImg          String      @default("")
   extractedId     String
 }
 
