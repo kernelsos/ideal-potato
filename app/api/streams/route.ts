@@ -40,14 +40,11 @@ export async function POST(req: NextRequest) {
         return "";
     }
         const extractedId = extractYoutubeId(data.url);        
-        console.log("Full URL:", data.url);
-        console.log("extractedId:", extractedId);
-
         const res = await youtubesearchapi.GetVideoDetails(extractedId);
-        console.log(res);
-        console.log("ID---->",res.id);
-        console.log("title---->",res.title);
-        console.log("thumbnail---->",res.thumbnail.thumbnails);
+
+        const thumbnails = res.thumbnail.thumbnails;
+        thumbnails.sort((a:{width: number}, b:{width: number}) => a.width < b.width ? -1 : 1);
+
         
         
         const stream = await prismaClient.stream.create({
@@ -56,6 +53,9 @@ export async function POST(req: NextRequest) {
                 url: data.url,
                 extractedId,
                 type: "Youtube",
+                title: res.title ?? "Can't find video title",
+                smallImg: (thumbnails.length > 1 ? thumbnails[thumbnails.length -2].url : thumbnails[thumbnails.length -1].url) ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSC3rt-o0TwZQbpDZ5QvQ8FCePSx_9aaJXulA&s",
+                bigImg: thumbnails[thumbnails.length -1].url ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSC3rt-o0TwZQbpDZ5QvQ8FCePSx_9aaJXulA&s"
             }
         });
         return NextResponse.json({
