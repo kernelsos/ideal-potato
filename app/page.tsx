@@ -3,12 +3,15 @@ import { Card } from "@/components/ui/card"
 import { Music, Radio, Users, Zap, PlayCircle, Headphones } from "lucide-react"
 import Link from "next/link"
 import { Appbar } from "./components/Appbar"
+import { Redirect } from "./components/Redirect"
+
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <Appbar/>
+      <Redirect/>
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
