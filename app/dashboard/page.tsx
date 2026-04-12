@@ -2,6 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Card, CardContent } from "@/components/ui/card"
+import LiteYouTubeEmbed from 'react-lite-youtube-embed';
+import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css';
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 function ChevronUp() {
@@ -51,6 +54,19 @@ function LinkIcon() {
   );
 }
 
+function getId(url: string): string {
+  const patterns = [
+          /(?:v=)([^&]+)/,        // handles ?v=VIDEO_ID
+          /youtu\.be\/([^?]+)/,   // handles youtu.be/VIDEO_ID
+  ];
+  for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) return match[1];
+  }
+  return "";
+    }
+
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Video {
   id: string;
@@ -66,6 +82,7 @@ interface Video {
   haveUpvoted: boolean;
 }
 
+const creatorId ="734153f3-53da-419a-be2a-6b9873b5bb85"
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -73,10 +90,12 @@ export default function Component() {
   const [inputLink, setInputLink] = useState("");
   const [queue, setQueue] = useState<Video[]>([]);
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // ── YOUR ORIGINAL LOGIC (unchanged) ─────────────────────────────────────
+
   async function refreshStreams() {
-    const res = await fetch("/api/streams/my", { credentials: "include" });
+    const res = await fetch("/api/streams/my", { credentials: "include" 
+    });
     const json = await res.json();
     setQueue(json.streams);
   }
@@ -86,14 +105,19 @@ export default function Component() {
     const interval = setInterval(() => {}, REFRESH_INTERVAL_MS);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newVideo: Video = {
-      id: String(queue.length + 1),
-      title: `New Song ${queue.length + 1}`,
-      upvotes: 0,
-    } as Video;
-    setQueue([...queue, newVideo]);
+    setLoading(true);
+    const res = await fetch("/api/streams/", {
+      method: "POST",
+      body: JSON.stringify({
+        creatorId,
+        url:inputLink
+      })
+    })
+
+    setQueue([...queue, await res.json()]);
+    setLoading(false);
     setInputLink("");
   };
 
@@ -102,7 +126,7 @@ export default function Component() {
       queue
         .map((video) =>
           video.id === id
-            ? { ...video, upvotes: isUpvote ? video.upvotes + 1 : video.upvotes -1 ,
+            ? { ...video, upvotes: isUpvote ? video.upvotes + 1 : video.upvotes - 1 ,
               haveUpvoted: !video.haveUpvoted 
             }
             : video
@@ -124,7 +148,7 @@ export default function Component() {
   };
 
   const handleShare = () => {
-    const shareLink = window.location.href;
+    const shareLink = `${window.location.hostname}/creator/${creatorId}`;
     navigator.clipboard.writeText(shareLink).then(
       () => {
         toast.success("Link copied!", {
@@ -204,27 +228,25 @@ export default function Component() {
                     style={{ fontFamily: "'DM Sans', sans-serif" }}
                   />
                 </div>
-                <button
+                <button disabled={loading}
                   type="submit"
                   className="px-4 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700
                     text-white text-[13px] font-bold whitespace-nowrap cursor-pointer
                     shadow-[0_2px_14px_rgba(99,102,241,0.38)] hover:opacity-90 transition-opacity"
-                >
-                  + Add to Queue
+                    onClick={handleSubmit}
+                >{ loading ? "Loading...": "+ Add to Queue" }
                 </button>
               </div>
             </form>
 
             {/* Preview thumbnail */}
-            {inputLink && (
-              <div className="mt-3 rounded-lg overflow-hidden border border-indigo-500/20 bg-black/30">
-                <img
-                  src="/placeholder.svg?height=200&width=320"
-                  alt="Video preview"
-                  className="w-full block"
-                />
+            {inputLink && !loading && (
+              <Card className="mt-3 rounded-lg overflow-hidden border border-indigo-500/20 bg-black/30">
+                <CardContent className="p-4">
+                  <LiteYouTubeEmbed title = "" id={getId(inputLink)}/>
+                </CardContent>
                 <p className="py-2 text-xs text-white/35 text-center">Video Preview</p>
-              </div>
+              </Card>
             )}
           </div>
 
