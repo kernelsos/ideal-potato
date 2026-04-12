@@ -35,7 +35,11 @@ export async function POST(req:NextRequest){
                 }
             }
         })
+        return NextResponse.json({
+            message: "Done!"
+        })
     } catch(e) {
+        console.log(e)
         return NextResponse.json({
             message: "Error while upvoting"
         }, {

@@ -27,13 +27,19 @@ export async function GET(req: NextRequest){
                 select: {
                     upvotes: true
                 }
+            },
+            upvotes: {
+                where: {
+                    userId: user.id
+                }
             }
         }
     })
     return NextResponse.json({
-        streams:streams.map(({_count, ...rest})=>({
+        streams: streams.map(({_count, ...rest})=>({
             ...rest,
-            upvotes: _count.upvotes
+            upvotes: _count.upvotes,
+            haveUpvoted: rest.upvotes.length ? true : false
         }))
     })
 }
