@@ -5,6 +5,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { Card, CardContent } from "@/components/ui/card"
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
 import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css';
+import { Appbar } from "./Appbar";
+
+
+
 
 function ChevronUp() {
   return (
@@ -142,7 +146,7 @@ export default function StreamView({
     fetch(`/api/streams/${isUpvote ? "upvote" : "downvote"}`, {
       method: "POST",
       body: JSON.stringify({ 
-        stream: id 
+        streamId: id 
       }),
     });
   };
@@ -176,15 +180,16 @@ export default function StreamView({
         className="min-h-screen bg-[#0d0d14] text-slate-200"
         style={{ fontFamily: "'DM Sans', sans-serif", backgroundImage: "radial-gradient(ellipse 80% 35% at 50% -5%, rgba(99,102,241,0.18) 0%, transparent 70%)" }}
       >
+        <Appbar/>
         <div className="max-w-2xl mx-auto px-4 pb-20">
-
+          
           {/* ── Header ── */}
-          <div className="relative flex flex-col items-center gap-2 pt-10 pb-2">
+          <div className="relative flex flex-col items-center gap-2 pt-25 pb-2">
 
             {/* Share button */}
             <button
               onClick={handleShare}
-              className="absolute right-0 top-10 flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg
+              className="absolute right-0 top-25 flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg
                 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400
                 text-xs font-semibold hover:bg-indigo-500/20 transition-colors cursor-pointer"
             >
