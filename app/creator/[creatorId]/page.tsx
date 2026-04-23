@@ -5,7 +5,7 @@ export default async function Page({ params }: { params: Promise<{ creatorId: st
   const { creatorId } = await params;
   return (
     <div>
-      <StreamView creatorId={creatorId} />
+      <StreamView creatorId={creatorId} playVideo={false} />
     </div>
   );
 }

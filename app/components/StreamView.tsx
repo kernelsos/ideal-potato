@@ -89,22 +89,28 @@ const REFRESH_INTERVAL_MS = 10 * 1000;
 
 
 export default function StreamView({
-    creatorId
+    creatorId,
+    playVideo = false
 }:{
-    creatorId: string
+    creatorId: string,
+    playVideo: boolean
+
 }) {
 
   const [inputLink, setInputLink] = useState("");
   const [queue, setQueue] = useState<Video[]>([]);
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(false);
+  const [playNextLoader, setplayNextLoader] = useState(false);
 
 
   async function refreshStreams() {
     const res = await fetch(`/api/streams/?creatorId=${creatorId}`, { credentials: "include" 
     });
     const json = await res.json();
+    
     setQueue(json.streams.sort((a: any,b: any) => a.upvotes < b.upvotes ? 1 : -1));
+    setCurrentVideo(json.activeStream.stream ?? null );
   }
 
   useEffect(() => {
@@ -118,19 +124,23 @@ export default function StreamView({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const res = await fetch("/api/streams/", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        creatorId,
-        url:inputLink
+    try {
+        const res = await fetch("/api/streams/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          creatorId,
+          url: inputLink
       }),
     });
-    await refreshStreams();
+  await refreshStreams();
+  setInputLink("")
+  } catch (e) {
+  } finally {
     setLoading(false);
-    setInputLink("");
-  };
-
+  }
+};
+  
   const handleVote = (id: string, isUpvote: boolean) => {
     setQueue(
       queue
@@ -150,10 +160,25 @@ export default function StreamView({
     });
   };
 
-  const playNext = () => {
+  const playNext = async () => {
     if (queue.length > 0) {
-      setCurrentVideo(queue[0]);
-      setQueue(queue.slice(1));
+      try {
+        setplayNextLoader(true);
+        const data = await fetch(`/api/streams/next?creatorId=${creatorId}`, {
+          method: "GET",
+        });
+        if (!data.ok) {
+          toast.error("Failed to play next song.");
+          return;
+        }
+
+        const json = await data.json();
+        setCurrentVideo(json.stream);
+      } catch(e) {
+        toast.error("Something went wrong.");
+      } finally {
+        setplayNextLoader(false);
+      }
     }
   };
 
@@ -338,41 +363,50 @@ return (
                 </div>
 
                 <div className="bg-white/[0.025] border border-white/[0.07] rounded-2xl overflow-hidden">
-                  {currentVideo ? (
-                    <>
-                      <div className="relative pt-[56.25%]">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${currentVideo.extractedId}?autoplay=1`}
-                          className="absolute inset-0 w-full h-full border-none"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          title="Now Playing"
-                        />
+                    {currentVideo ? (
+                      <div>
+                        {playVideo ? (
+                          <div className="relative pt-[56.25%]">
+                              <iframe
+                                className="absolute inset-0 w-full h-full"
+                                src={`https://www.youtube.com/embed/${currentVideo.extractedId}?autoplay=1`}
+                                allow="autoplay"
+                                allowFullScreen
+                              />
+                            </div>                          
+                        ) : (
+                          <>
+                            <img
+                              src={currentVideo.bigImg}
+                              className="w-full object-cover"
+                            />
+                            <div className="px-4 py-3.5">
+                              <p className="text-[10px] font-bold tracking-[1.2px] uppercase text-white/30 mb-1">
+                                Current Playing Song
+                              </p>
+                              <p className="text-[15px] font-bold text-slate-200">
+                                {currentVideo.title}
+                              </p>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <div className="px-4 py-3.5">
-                        <p className="text-[10px] font-bold tracking-[1.2px] uppercase text-white/30 mb-1">
-                          Current Playing Song
-                        </p>
-                        <p className="text-[15px] font-bold text-slate-200">{currentVideo.title}</p>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="py-14 text-center text-[13px] text-white/20">
-                      No video playing — add one to the queue!
-                    </p>
-                  )}
-                </div>
+                    ) : (
+                      <p className="py-14 text-center text-[13px] text-white/20">
+                        No video playing — add one to the queue!
+                      </p>
+                    )}
+                  </div>
 
-                <button
+                {playVideo && <button disabled={playNextLoader}
                   onClick={playNext}
                   className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
                     bg-indigo-500/10 border border-indigo-500/25 text-indigo-400
                     text-[13px] font-semibold hover:bg-indigo-500/20 transition-colors cursor-pointer"
                 >
-                  <PlayIcon /> Play Next
-                </button>
+                  <PlayIcon /> {playNextLoader ? "Loading..." : "Play Next"}
+                </button>}
               </div>
-
             </div>
           </div>
         </div>
