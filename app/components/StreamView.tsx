@@ -105,12 +105,16 @@ export default function StreamView({
 
 
   async function refreshStreams() {
-    const res = await fetch(`/api/streams/?creatorId=${creatorId}`, { credentials: "include" 
-    });
+    const res = await fetch(`/api/streams/?creatorId=${creatorId}`, { credentials: "include" });
     const json = await res.json();
     
-    setQueue(json.streams.sort((a: any,b: any) => a.upvotes < b.upvotes ? 1 : -1));
-    setCurrentVideo(json.activeStream.stream ?? null );
+    setQueue(json.streams.sort((a: any, b: any) => a.upvotes < b.upvotes ? 1 : -1));
+    
+    
+    setCurrentVideo(c => {
+      if (c) return c;
+      return json.activeStream?.stream ?? null;
+    });
   }
 
   useEffect(() => {
@@ -189,6 +193,7 @@ export default function StreamView({
     () => toast.error("Failed to copy link.")
   );
 };
+
 return (
     <>
       <div
@@ -368,6 +373,7 @@ return (
                         {playVideo ? (
                           <div className="relative pt-[56.25%]">
                               <iframe
+                                id="yt-player"
                                 className="absolute inset-0 w-full h-full"
                                 src={`https://www.youtube.com/embed/${currentVideo.extractedId}?autoplay=1`}
                                 allow="autoplay"

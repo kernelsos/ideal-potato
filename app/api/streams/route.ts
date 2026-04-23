@@ -4,6 +4,8 @@ import { z } from "zod";
 import youtubesearchapi from "youtube-search-api";
 import { getServerSession } from "next-auth";
 
+const MAX_QUEUE_LENGTH = 10;
+
 // OLD method of extrcating ID
 //var YT_REGEX =/^(?:(?:https?:)?\/\/)?(?:www\.)?(?:m\.)?(?:youtu(?:be)?\.com\/(?:v\/|embed\/|watch(?:\/|\?v=))|youtu\.be\/)((?:\w|-){11})(?:\S+)?$/;
 //const extractedId = data.url.split("?v=")[1];
@@ -39,26 +41,51 @@ export async function POST(req: NextRequest) {
             if (match) return match[1];
         }
         return "";
-    }
-        const extractedId = extractYoutubeId(data.url);        
-        const res = await youtubesearchapi.GetVideoDetails(extractedId);
+      }
+      const session  = await getServerSession();
+      const user = await prismaClient.user.findFirst({
+        where: {
+          email: session?.user?.email ?? ""
+        }
+      });
+      if (!user){
+        return NextResponse.json({
+          message: "Unauthenticated"
+        }, {
+          status: 403
+        })
+      }
+      const extractedId = extractYoutubeId(data.url);        
+      const res = await youtubesearchapi.GetVideoDetails(extractedId);
+      const thumbnails = res.thumbnail.thumbnails;
+      thumbnails.sort((a:{width: number}, b:{width: number}) => a.width < b.width ? -1 : 1);
 
-        const thumbnails = res.thumbnail.thumbnails;
-        thumbnails.sort((a:{width: number}, b:{width: number}) => a.width < b.width ? -1 : 1);
+      const existingActiveStream =await prismaClient.stream.count({
+        where: {
+          userId: data.creatorId
+        }
+      })
 
-        
-        console.log("creatorId being used:", data.creatorId)
-        const stream = await prismaClient.stream.create({
-            data: {
-                userId: data.creatorId,
-                url: data.url,
-                extractedId,
-                type: "Youtube",
-                title: res.title ?? "Can't find video title",
-                smallImg: (thumbnails.length > 1 ? thumbnails[thumbnails.length -2].url : thumbnails[thumbnails.length -1].url) ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSC3rt-o0TwZQbpDZ5QvQ8FCePSx_9aaJXulA&s",
-                bigImg: thumbnails[thumbnails.length -1].url ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSC3rt-o0TwZQbpDZ5QvQ8FCePSx_9aaJXulA&s"
-            }
+      if(existingActiveStream > MAX_QUEUE_LENGTH) {
+        return NextResponse.json({
+          message: "Already at limit"
+        }, { status : 411} )
+
+      }
+     
+      console.log("creatorId being used:", data.creatorId)
+      const stream = await prismaClient.stream.create({
+          data: {
+              userId: data.creatorId,
+              url: data.url,
+              extractedId,
+              type: "Youtube",
+              title: res.title ?? "Can't find video title",
+              smallImg: (thumbnails.length > 1 ? thumbnails[thumbnails.length -2].url : thumbnails[thumbnails.length -1].url) ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSC3rt-o0TwZQbpDZ5QvQ8FCePSx_9aaJXulA&s",
+              bigImg: thumbnails[thumbnails.length -1].url ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSC3rt-o0TwZQbpDZ5QvQ8FCePSx_9aaJXulA&s"
+          }
         });
+
         return NextResponse.json({
             ...stream,
             hasUpvoted: false,
