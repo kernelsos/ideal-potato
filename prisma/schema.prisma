@@ -4,19 +4,17 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client-js"
-  
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
 }
-//output   = "../app/generated/prisma"
 
 datasource db {
-  provider = "postgresql",
-  url  = env("DATABASE_URL)
+  provider = "postgresql"    
 }
 
 model User {
   id          String      @id @default(uuid())
-  email       String 
+  email       String      @unique
   provider    Provider
   role        Role
   streams     Stream[]
@@ -32,7 +30,17 @@ model Stream {
   user            User        @relation(fields: [userId],references: [id])
   url             String
   title           String?
+  smallImg        String      @default("")
+  bigImg          String      @default("")
   extractedId     String
+  CurrentStream   CurrentStream?
+}
+
+
+model CurrentStream {
+  userId          String      @id
+  streamId        String?     @unique
+  stream          Stream?     @relation(fields: [streamId], references: [id])
 }
 
 
