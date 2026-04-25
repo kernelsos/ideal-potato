@@ -1,5 +1,5 @@
 # About 
-This is a NextJS App where Creators can create streams, and their fans can come to this platform and vote for their favorite song to be played at the streamer's stream. You can also downvote other songs. 
+This is a Next.js app where creators can create streams, and their fans can visit the platform to vote for the songs they want played during the stream. Users can also downvote other songs. 
 
 
 # Further improvements:
