@@ -1,7 +1,22 @@
+import { getServerSession } from "next-auth";
 import StreamView from "../components/StreamView";
+import { prismaClient } from "../lib/db";
+import { redirect } from "next/navigation";
 
-const creatorId ="734153f3-53da-419a-be2a-6b9873b5bb85"
+export default async function Component() {
+  const session = await getServerSession();
 
-export default function Component(){
-  return <StreamView creatorId={creatorId} playVideo={true} />
+  if (!session?.user?.email) {
+    redirect("/api/auth/signin");
+  }
+
+  const user = await prismaClient.user.findFirst({
+    where: { email: session.user.email }
+  });
+
+  if (!user) {
+    redirect("/api/auth/signin");
+  }
+
+  return <StreamView creatorId={user.id} playVideo={true} />;
 }
