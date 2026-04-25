@@ -242,7 +242,7 @@ return (
 
               {queue.length === 0 ? (
                 <p className="py-10 text-center text-[13px] text-white/20 border border-dashed border-white/[0.08] rounded-xl">
-                  Queue is empty — be the first to submit a song!
+                  Queue is empty — be the first to submit a song! 
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -316,7 +316,7 @@ return (
               {/* Submit a Song */}
               <div>
                 <p className="mb-2.5 text-[11px] font-bold tracking-[1.6px] uppercase text-white/30">
-                  Submit a Song
+                  Submit a Song (Youtube URL)
                 </p>
                 <div className="bg-white/[0.035] border border-white/[0.075] rounded-xl p-4">
                   <form onSubmit={handleSubmit}>
